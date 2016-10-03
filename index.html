@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<title>Web Unleashed</title>
+		<style>
+			html {
+				height: 100%;
+			}
+			body {
+				width: 100%;
+				height: 100%;
+
+				display: flex;
+				justify-content: center;
+				align-items: center;
+
+				margin: 0;
+				padding: 0;
+
+				color: #bbb;
+
+				font-family: sans-serif;
+
+				background-color: #111;
+
+				overflow: hidden;
+			}
+			a {
+				color: #fff;
+				text-decoration: none;
+				border-bottom: 1px solid #84f;
+			}
+			h1 {
+				color: #eee;
+				font-size: 22px;
+				font-weight: normal;
+				text-transform: uppercase;
+				padding: 0px 10px 10px 10px;
+			}
+			hr {
+				border: 0;
+				border-top: 1px solid #222;
+				margin: 40px 0px;
+			}
+			#info {
+				border: 1px solid #333;
+				padding: 40px 80px;
+				text-align: center;
+			}
+			#title {
+				font-size: 36px;
+				margin: 10px;
+			}
+			#meta {
+				font-size: 16px;
+			}
+			#start {
+				display: inline-block;
+				color: #fff;
+				border-bottom: 1px solid #f48;
+				cursor: pointer;
+				font-size: 20px;
+			}
+		</style>
+	</head>
+	<body>
+
+		<div id="info">
+			<h1><a href="http://fitc.ca/event/webu16/" target="_blank">Web Unleashed 2016</a> Titles</h1>
+			code: <a href="http://mrdoob.com">mr.doob</a>
+			music: <a href="http://mosaik.se/track/aerial" target="_blank">mosaik</a>
+			<hr />
+			<div id="start">START</div>
+		</div>
+
+		<script src="js/three.js"></script>
+		<script src="js/OBJLoader.js"></script>
+		<script src="js/OrbitControls.js"></script>
+
+		<script src="js/GPGPU.js"></script>
+		<script src="js/gpgpu/SimulationShader.js"></script>
+		<script src="js/gpgpu/BlurShader.js"></script>
+		<script src="js/gpgpu/CopyShader.js"></script>
+		<script src="js/gpgpu/MixShader.js"></script>
+
+		<script src="js/AudioAnalyser.js"></script>
+		<script src="js/text.js"></script>
+
+		<script id="vs-render" type="x-shader/x-vertex">
+
+			// #define PI 3.14159265359
+
+			uniform sampler2D pos1;
+			uniform sampler2D pos2;
+
+			uniform float pointSize;
+
+			uniform float size;
+
+			// varying vec3 vPosition;
+			varying vec3 vDir;
+			varying float vLife;
+
+			void main() {
+
+				vec2 uv = position.xy + vec2( 0.5 / size, 0.5 / size );
+
+				vec4 data = texture2D( pos1, uv );
+
+				vDir = normalize( data.xyz - texture2D( pos2, uv ).xyz );
+
+				// vPosition = data.xyz;
+				vLife = data.w;
+
+				vec4 mvPosition = modelViewMatrix * vec4( data.xyz, 1.0 );
+
+				gl_PointSize = pointSize * ( 70.0 / - mvPosition.z );
+				gl_Position = projectionMatrix * mvPosition;
+
+			}
+
+		</script>
+
+		<script id="fs-render" type="x-shader/x-fragment">
+
+			// #define PI 3.14159265359
+
+			// uniform vec3 pointColor;
+
+			// varying vec3 vPosition;
+			varying vec3 vDir;
+			varying float vLife;
+
+			void main() {
+
+				float distance = length( gl_PointCoord.xy - 0.5 ) * 2.0;
+
+				if ( distance > 1.0 ) discard;
+
+				// vec3 color = vec3( vPosition.z ) * 0.001; // pointColor + vPosition * 0.002;
+				vec3 color = vDir * vLife * 0.9; // vec3( 0.0 );
+				// color.r = ( 1.0 - life ) * 0.6 + 0.4;
+				// color.g = pow( 1.0 - life, 4.0 );
+				// color.b = pow( 1.0 - life, 4.0 );
+				// color.g = pow( color.g, 4.0 );
+				// color.b = pow( color.b, 16.0 );
+				// color += vPosition * 0.001;
+				gl_FragColor = vec4( color, 1.0 );
+
+			}
+
+		</script>
+
+		<script>
+
+			function shuffleArray(array) {
+				for (var i = array.length - 1; i > 0; i--) {
+					var j = Math.floor(Math.random() * (i + 1));
+					var temp = array[i];
+					array[i] = array[j];
+					array[j] = temp;
+				}
+				return array;
+			}
+
+			/*
+			var names = [ "Alex Blom", "Alex Wilmer", "Alicia Liu", "Alicia Sedlock", "Anne Thomas", "Bermon Painter", "Branden Hall", "Brian Rinaldi", "Chad Upton", "Clarissa Peterson", "Cory Simmons", "Dan Callahan", "Dyanna Zaidman", "Engin Arslan", "Francis Bourre", "George Zamfir", "Haris Mahmood", "Holly Schinsky", "Irina Shestak", "Jane Kim", "Jared Forsyth", "Jason Pamental", "Jean-Philippe Côté", "Jonathan Stark", "Kit Oliynyk", "Kyle Simpson", "Lana Phillips", "Lea Verou", "Liam Thurston", "Lin Clark", "Luke DeWitt", "Mariah Hay", "Matias Niemelä", "Mike Costanzo", "Mike Hartington", "Paul Pattison", "Rachael L Moore", "Rami Sayar", "Ricardo Cabello", "Rob McDiarmid", "Robyn Larsen", "Ron Edelen", "Ryan Christiani", "Scott Biggart", "Simon MacDonald", "Stacey Mulcahy", "Stoyan Stefanov", "Tommy Lewis", "Vitaly Friedman", "Wes Bos", "Yuri Takhteyev" ];
+			*/
+			var names = [ [ "Alex Blom", "Lin Clark" ], [ "Alex Wilmer", "Alicia Liu" ], "Alicia Sedlock", "Anne Thomas", "Bermon Painter", "Branden Hall", "Brian Rinaldi", "Chad Upton", "Clarissa Peterson", "Cory Simmons", "Dan Callahan", "Dyanna Zaidman", "Engin Arslan", "Francis Bourre", "George Zamfir", "Haris Mahmood", "Holly Schinsky", "Irina Shestak", [ "Jane Kim", "Wes Bos" ], "Jared Forsyth", "Jason Pamental", "Jean-Philippe Côté", "Jonathan Stark", "Kit Oliynyk", "Kyle Simpson", "Lana Phillips", "Lea Verou", "Liam Thurston", "Luke DeWitt", "Mariah Hay", "Matias Niemelä", "Mike Costanzo", "Mike Hartington", "Paul Pattison", "Rachael L Moore", "Rami Sayar", "Ricardo Cabello", "Rob McDiarmid", "Robyn Larsen", "Ron Edelen", "Ryan Christiani", "Scott Biggart", "Simon MacDonald", "Stacey Mulcahy", "Stoyan Stefanov", "Tommy Lewis", "Vitaly Friedman", "Yuri Takhteyev" ];
+			shuffleArray( names );
+
+			// console.log( names.length );
+
+			//
+
+			var audio = document.createElement( 'audio' );
+			audio.controls = true;
+			audio.style.position = 'absolute';
+			audio.style.left = 'calc(50% - 150px)';
+			audio.style.bottom = '25px';
+			audio.style.display = 'none';
+			audio.style.opacity = 0;
+			audio.style.transition = 'opacity 1s';
+			document.body.appendChild( audio );
+
+			/*
+			var source = document.createElement( 'source' );
+			source.src = 'BROKEN MANTRA.ogg';
+			source.type = 'audio/ogg';
+			audio.appendChild( source );
+			*/
+
+			var source = document.createElement( 'source' );
+			source.src = 'Mosaik - Aerials - 01 Aerial.mp3';
+			source.type = 'audio/mpeg';
+			audio.appendChild( source );
+
+			//
+
+			var SPEED = 95;
+			var LOOP_LENGTH = 4.725 / 2;
+
+			//
+
+			var analyser;
+
+			var scene, camera, renderer;
+			var particleMaterial;
+			var wireframe;
+
+			var dolly;
+			var environment;
+			var titles;
+
+			var gpgpu, simulationShader;
+			var copyShader, blurShader, mixShader;
+
+			var originsTexture;
+
+			var rtTexturePos, rtTexturePos2;
+			var rtPost1, rtPost2, rtPost3;
+
+			var font;
+
+			var count = 0;
+
+			var controls;
+
+			function init() {
+
+				//
+
+				renderer = new THREE.WebGLRenderer( { antialias: false, stencil: false } );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 800 );
+				// camera.position.z = 50;
+
+				// controls = new THREE.OrbitControls( camera );
+
+				document.body.appendChild( renderer.domElement );
+
+				var gl = renderer.context;
+
+				if ( gl.getExtension( "OES_texture_float" ) === null ) {
+
+					alert( "No OES_texture_float support for float textures!" );
+					return;
+
+				}
+
+				if ( gl.getParameter( gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS ) === 0 ) {
+
+					alert( "No support for vertex shader textures!" );
+					return;
+
+				}
+
+				scene = new THREE.Scene();
+				scene.fog = new THREE.Fog( 0x111111, -400, 800 );
+				scene.background = scene.fog.color;
+
+				dolly = new THREE.Camera();
+				dolly.add( camera );
+
+				var light = new THREE.PointLight( 0xff0088, 2, 600 );
+				light.position.z = - 200;
+				dolly.add( light );
+
+				var light = new THREE.PointLight( 0xffffff, 4, 240 );
+				dolly.add( light );
+
+
+				scene.add( dolly );
+
+				// ENVIRONMENT
+
+				environment = new THREE.Group();
+				scene.add( environment );
+
+				/*
+				var geometry = new THREE.TetrahedronGeometry( 2, 0 );
+
+				for ( var i = 0; i < 600; i += 10 ) {
+
+					var angle = Math.random() * Math.PI * 2;
+					var distance = Math.random() * 200 + 100;
+
+					var material = new THREE.MeshPhongMaterial( { color: new THREE.Color().setHSL( 0, 0, Math.random() * 0.25 ), shading: THREE.FlatShading } );
+					var mesh = new THREE.Mesh( geometry, material );
+					mesh.position.x = Math.sin( angle ) * distance * 2;
+					mesh.position.y = Math.cos( angle ) * distance;
+					mesh.position.z = i * 20;
+					mesh.rotation.z = Math.random();
+					mesh.userData.scale = Math.random() * 50 + 10;
+					environment.add( mesh )
+
+				}
+				*/
+
+				// var geometry = new THREE.CircleGeometry( 1, 5 );
+				var geometry = new THREE.TetrahedronGeometry( 1, 0 );
+				var geometry2 = new THREE.EdgesGeometry( geometry );
+
+				var material = new THREE.MeshPhongMaterial( { color: new THREE.Color().setHSL( 0, 0, Math.random() * 0.25 ), shading: THREE.FlatShading } );
+				var material2 = new THREE.LineBasicMaterial( { color: new THREE.Color().setHSL( 0, 0, Math.random() * 0.25 ) } );
+
+				for ( var i = 0; i < 300; i ++ ) {
+
+					var angle = Math.random() * Math.PI * 2;
+					var distance = Math.random() * 200 + 100;
+
+					var mesh = new THREE.Mesh( geometry, material );
+					mesh.position.x = Math.sin( angle ) * distance * 2;
+					mesh.position.y = Math.cos( angle ) * distance;
+					mesh.position.z = i * 40;
+					mesh.userData.rotation = new THREE.Euler( Math.random(), Math.random(), Math.random() );
+					mesh.userData.scale = Math.random() * 80 + 5;
+					environment.add( mesh );
+
+					mesh.add( new THREE.LineSegments( geometry2, material2 ) );
+
+				}
+
+				var geometry = new THREE.CubeGeometry( 1, 1, 1 );
+				var geometry2 = new THREE.EdgesGeometry( geometry );
+
+				for ( var i = 0; i < 300; i ++ ) {
+
+					var angle = Math.random() * Math.PI * 2;
+					var distance = Math.random() * 200 + 100;
+
+					var mesh = new THREE.LineSegments( geometry2, material2 );
+					mesh.position.x = Math.sin( angle ) * distance * 2;
+					mesh.position.y = Math.cos( angle ) * distance;
+					mesh.position.z = i * 40;
+					mesh.userData.rotation = new THREE.Euler( Math.random(), Math.random(), Math.random() );
+					mesh.userData.scale = Math.random() * 100 + 5;
+					environment.add( mesh );
+
+				}
+
+				// FITC
+
+				var loader = new THREE.OBJLoader();
+
+				loader.load( 'models/fitc.obj', function ( object ) {
+
+					var material = new THREE.MeshPhongMaterial();
+
+					object.traverse( function ( child ) {
+
+						if ( child.material ) {
+
+							child.material = material;
+
+						}
+
+					} );
+
+					object.position.x = - 20.0;
+					object.position.y = 8.0;
+					object.rotation.x = Math.PI / 2;
+					object.scale.setScalar( 1000 );
+
+					scene.add( object );
+
+				} );
+
+				loader.load( 'models/logo.obj', function ( object ) {
+
+					var material = new THREE.MeshPhongMaterial();
+
+					object.traverse( function ( child ) {
+
+						if ( child.material ) {
+
+							child.material = material;
+
+						}
+
+					} );
+
+					object.position.x = - 200.0;
+					object.position.y = 60.0;
+					object.position.z = ( 48 + 2 ) * LOOP_LENGTH * SPEED;
+					object.rotation.x = Math.PI / 2;
+					object.scale.setScalar( 3000 );
+
+					scene.add( object );
+
+				} );
+
+				// PARTICLES
+
+				var size = 512;
+				var data = new Float32Array( size * size * 4 );
+
+				//
+
+				gpgpu = new GPGPU( renderer );
+
+				simulationShader = new GPGPU.SimulationShader();
+
+				originsTexture = new THREE.DataTexture( data, size, size, THREE.RGBAFormat, THREE.FloatType );
+				originsTexture.minFilter = THREE.NearestFilter;
+				originsTexture.magFilter = THREE.NearestFilter;
+				originsTexture.generateMipmaps = false;
+				originsTexture.needsUpdate = true;
+
+				simulationShader.setOriginsTexture( originsTexture );
+
+				rtTexturePos = new THREE.WebGLRenderTarget( size, size, {
+					minFilter: THREE.NearestFilter,
+					magFilter: THREE.NearestFilter,
+					format: THREE.RGBAFormat,
+					type: THREE.FloatType,
+					depthBuffer: false,
+					stencilBuffer: false
+				} );
+
+				rtTexturePos2 = rtTexturePos.clone();
+
+				var positions = new Float32Array( size * size * 3 );
+
+				for ( var i = 0, j = 0, l = positions.length / 3; i < l; i ++, j += 3 ) {
+
+					positions[ j + 0 ] = ( i % size ) / size;
+					positions[ j + 1 ] = Math.floor( i / size ) / size;
+
+				}
+
+				var geometry = new THREE.BufferGeometry();
+				geometry.addAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+
+				particleMaterial = new THREE.ShaderMaterial( {
+
+					uniforms: {
+
+						"pos1": { type: "t", value: rtTexturePos.texture },
+						"pos2": { type: "t", value: rtTexturePos2.texture },
+
+						"size": { type: "f", value: size },
+
+						// "pointColor": { type: "v3", value: new THREE.Vector3() },
+						"pointSize": { type: "f", value: window.innerHeight / 200 }
+
+					},
+					vertexShader: document.getElementById( 'vs-render' ).textContent,
+					fragmentShader: document.getElementById( 'fs-render' ).textContent,
+					depthTest: false,
+					depthWrite: false,
+					blending: THREE.AdditiveBlending,
+					transparent: true
+
+				} );
+
+				var points = new THREE.Points( geometry, particleMaterial );
+				points.frustumCulled = false;
+				scene.add( points );
+
+				/*
+				var mesh = new THREE.Mesh(
+					new THREE.CubeGeometry( 500, 500, 500 ),
+					new THREE.MeshBasicMaterial( { color: 0xffffff, wireframe: true, opacity: 0.1, transparent: true } )
+				);
+				scene.add( mesh );
+				*/
+
+				rtPost1 = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: THREE.LinearFilter } );
+				rtPost1.texture.generateMipmaps = false;
+
+				rtPost2 = new THREE.WebGLRenderTarget( window.innerWidth / 8, window.innerHeight / 8, { minFilter: THREE.LinearFilter } );
+				rtPost2.texture.generateMipmaps = false;
+
+				rtPost3 = new THREE.WebGLRenderTarget( window.innerWidth / 8, window.innerHeight / 8, { minFilter: THREE.LinearFilter } );
+				rtPost3.texture.generateMipmaps = false;
+
+				copyShader = new GPGPU.CopyShader();
+				blurShader = new GPGPU.BlurShader();
+				mixShader = new GPGPU.MixShader();
+
+				//
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+				//
+
+				var timeoutID;
+
+				function showControls( event ) {
+
+					audio.style.opacity = 0.5;
+					document.body.style.cursor = 'default';
+
+					if ( timeoutID !== undefined ) {
+
+						clearTimeout( timeoutID );
+
+					}
+
+					timeoutID = setTimeout( function () {
+
+						audio.style.opacity = 0;
+						document.body.style.cursor = 'none';
+
+					}, 1000 );
+
+				};
+
+				document.addEventListener( 'mousemove', showControls );
+				document.addEventListener( 'touchstart', showControls );
+
+				analyser = new AudioAnalyser( audio );
+
+				audio.style.display = '';
+
+				//
+
+				var loader = new THREE.FontLoader();
+				loader.load( 'fonts/Raleway-Light-Regular.json', function ( font ) {
+
+					titles = new THREE.Group();
+					scene.add( titles );
+
+					var material = new THREE.MeshPhongMaterial( { color: 0x8080ff } );
+
+					for ( var i = 0; i < names.length; i ++ ) {
+
+						var name = names[ i ];
+
+						if ( Array.isArray( name ) ) {
+
+							var name1 = name[ 0 ];
+							var parts = name1.split( ' ' );
+							var shapes = font.generateShapes( parts[ 0 ], 30 );
+							var geometry = new THREE.ShapeGeometry( shapes );
+							geometry.center();
+							geometry.translate( -60, 20, 0 );
+
+							var shapes = font.generateShapes( parts[ 1 ], 30 );
+							var geometry2 = new THREE.ShapeGeometry( shapes );
+							geometry2.center();
+							geometry2.translate( -60, -20, 0 );
+
+							geometry.merge( geometry2 );
+
+							//
+
+							var name2 = name[ 1 ];
+							var parts = name2.split( ' ' );
+							var shapes = font.generateShapes( parts[ 0 ], 30 );
+							var geometry3 = new THREE.ShapeGeometry( shapes );
+							geometry3.center();
+							geometry3.translate( 60, 20, 0 );
+
+							geometry.merge( geometry3 );
+
+							var shapes = font.generateShapes( parts[ 1 ], 30 );
+							var geometry4 = new THREE.ShapeGeometry( shapes );
+							geometry4.center();
+							geometry4.translate( 60, -20, 0 );
+
+							geometry.merge( geometry4 );
+
+
+						} else {
+
+							var parts = name.split( ' ' );
+							var shapes = font.generateShapes( parts[ 0 ], 30 );
+							var geometry = new THREE.ShapeGeometry( shapes );
+							geometry.center();
+							geometry.translate( 0, 20, 0 );
+
+							if ( parts[ 2 ] !== undefined ) parts[ 1 ] += ' ' + parts[ 2 ];
+
+							var shapes = font.generateShapes( parts[ 1 ], 30 );
+							var geometry2 = new THREE.ShapeGeometry( shapes );
+							geometry2.center();
+							geometry2.translate( 0, -20, 0 );
+
+							geometry.merge( geometry2 );
+
+						}
+
+						var title = new THREE.Mesh( geometry, material );
+						title.position.z = ( i + 2 ) * SPEED * LOOP_LENGTH;
+						titles.add( title );
+
+					}
+
+				} );
+
+			}
+
+			function updateOrigins( mesh ) {
+
+				var point = new THREE.Vector3();
+				var data = originsTexture.image.data;
+
+				var geometry = mesh.geometry;
+				var vertices = geometry.vertices;
+
+				for ( var i = 0, l = data.length; i < l; i += 4 ) {
+
+					var index = Math.floor( Math.random() * ( vertices.length - 1 ) );
+
+					var vertex1 = vertices[ index + 0 ];
+					var vertex2 = vertices[ index + 1 ];
+
+					point.subVectors( vertex2, vertex1 );
+					point.multiplyScalar( Math.random() );
+					point.add( vertex1 );
+
+					data[ i ] = point.x;
+					data[ i + 1 ] = point.y;
+					data[ i + 2 ] = point.z + mesh.position.z;
+					data[ i + 3 ] = Math.random() * 0.5 + 0.5;
+
+				}
+
+				originsTexture.needsUpdate = true;
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				rtPost1.setSize( window.innerWidth, window.innerHeight );
+				rtPost2.setSize( window.innerWidth / 8, window.innerHeight / 8 );
+				rtPost3.setSize( window.innerWidth / 8, window.innerHeight / 8 );
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				// particleMaterial.uniforms.pointSize.value = window.innerHeight / 600;
+
+			}
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+				render();
+
+			}
+
+			var offset = 6.148 - 0.200;
+			var currentIndex = -1;
+
+			function render() {
+
+				// controls.update();
+
+				analyser.update();
+
+				var timer = audio.currentTime;
+
+				dolly.position.z = timer * SPEED - 100;
+				dolly.position.x = Math.sin( timer / 3 ) * 40;
+				dolly.position.y = Math.cos( timer / 4 ) * 20;
+				dolly.lookAt( new THREE.Vector3( 0, 0, dolly.position.z - 400 ) );
+				dolly.rotation.z = Math.sin( timer / 10 ) * 0.4;
+
+				if ( timer > offset ) {
+
+					var index = Math.floor( ( timer - offset ) / LOOP_LENGTH );
+
+					if ( index >= names.length ) index = 0; // HACK
+
+					if ( index !== currentIndex ) {
+
+						// console.log( index );
+
+						updateOrigins( titles.children[ index ] );
+
+						currentIndex = index;
+
+					}
+
+				}
+
+				//
+
+				// particleMaterial.uniforms.pointColor.value.x = analyser.getFrequency()[ 4 ] / 64;
+				// particleMaterial.uniforms.pointColor.value.y = analyser.getFrequency()[ 4 ] / 1024;
+				// particleMaterial.uniforms.pointColor.value.z = analyser.getFrequency()[ 9 ] / 400;
+				// particleMaterial.uniforms.pointColor.value.z = analyser.getFrequency()[ 15 ] / 50;
+
+				// var opacity = analyser.getFrequency()[ 4 ] / 128;
+
+				// opacity += Math.pow( analyser.getFrequency()[ 9 ] / 256, 4 );
+				// opacity += analyser.getFrequency()[ 15 ] / 32;
+
+				// if ( analyser.getFrequency()[ 9 ] > 64 ) opacity *= 2;
+				// if ( analyser.getFrequency()[ 73 ] > 16 ) opacity *= 6;
+
+				scene.background.b = 0.06 + analyser.getFrequency()[ 10 ] / 600;
+
+				for ( var i = 0; i < environment.children.length; i ++ ) {
+
+					var child = environment.children[ i ];
+					child.material.color.b = ( analyser.getFrequency()[ 10 ] / 80 );
+					child.scale.setScalar( child.userData.scale + Math.pow( analyser.getFrequency()[ 10 ] / 200, 2 ) * 20 );
+					child.rotation.copy( child.userData.rotation );
+					child.rotation.y += timer / 3.0;
+
+				}
+
+				// simulationShader.setIntensity( Math.pow( analyser.getFrequency()[ 10 ] / 160, 4 ) );
+				simulationShader.setTimer( timer );
+
+				if ( count % 2 === 0 ) {
+
+					gpgpu.pass( simulationShader.setPositionsTexture( rtTexturePos.texture ), rtTexturePos2 );
+					particleMaterial.uniforms.pos1.value = rtTexturePos2.texture;
+					particleMaterial.uniforms.pos2.value = rtTexturePos.texture;
+
+				} else {
+
+					gpgpu.pass( simulationShader.setPositionsTexture( rtTexturePos2.texture ), rtTexturePos );
+					particleMaterial.uniforms.pos1.value = rtTexturePos.texture;
+					particleMaterial.uniforms.pos2.value = rtTexturePos2.texture;
+
+				}
+
+				count ++;
+
+				//
+
+				gpgpu.render( scene, camera, rtPost1 );
+
+				// post processing
+
+				/*
+				gpgpu.pass( copyShader.setTexture( rtPost1 ), rtPost2 );
+
+				for ( var i = 0; i < 16; i ++ ) {
+
+					gpgpu.pass( blurShader.setTexture( rtPost2 ).setDelta( 1 / rtPost2.width,  0 ), rtPost3 );
+					gpgpu.pass( blurShader.setTexture( rtPost3 ).setDelta( 0, 1 / rtPost2.height ), rtPost2 );
+
+				}
+				*/
+
+				gpgpu.out( mixShader.setTextures( rtPost1, rtPost2 ) );
+
+			}
+
+			//
+
+			var info = document.getElementById( 'info' );
+			var start = document.getElementById( 'start' );
+			start.addEventListener( 'click', function ( event ) {
+
+				document.body.style.cursor = 'none';
+				info.style.display = 'none';
+
+				audio.play();
+
+				init();
+				animate();
+
+			} );
+
+		</script>
+	</body>
+</html>

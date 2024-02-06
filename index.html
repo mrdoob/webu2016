@@ -3,7 +3,7 @@
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 		<title>Web Unleashed</title>
 		<style>
 			html {
@@ -237,6 +237,17 @@
 
 				renderer = new THREE.WebGLRenderer( { antialias: false, stencil: false } );
 				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.domElement.addEventListener( 'dblclick', function ( event ) {
+
+					var element = document.body;
+
+					if ( element.requestFullscreen ) {
+
+						element.requestFullscreen( { navigationUI: 'hide' } );
+
+					}
+
+				} );
 
 				camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 800 );
 				// camera.position.z = 50;
@@ -756,12 +767,22 @@
 
 			var info = document.getElementById( 'info' );
 			var start = document.getElementById( 'start' );
-			start.addEventListener( 'click', function ( event ) {
+			start.addEventListener( 'click', async function ( event ) {
 
 				document.body.style.cursor = 'none';
 				info.style.display = 'none';
 
 				audio.play();
+
+				if ( 'wakeLock' in navigator ) {
+
+					try {
+
+						await navigator.wakeLock.request( 'screen' );
+
+					} catch ( err ) {}
+
+				}
 
 				init();
 				animate();
